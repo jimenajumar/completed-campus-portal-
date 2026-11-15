@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\ClubAdvisorHistory;
+use Illuminate\Support\Facades\DB;
 
 class ClubController extends Controller
 {
@@ -243,6 +245,8 @@ public function advisors(Request $request)
 }
 
 // Assign or remove a club advisor
+
+// Assign or remove a club advisor and record assignment history
 public function assignAdvisor(Request $request, Club $club)
 {
     if ($request->user()->role !== 'admin') {
@@ -255,8 +259,10 @@ public function assignAdvisor(Request $request, Club $club)
         'advisor_id' => 'nullable|integer|exists:users,id',
     ]);
 
-    if (!empty($validated['advisor_id'])) {
-        $advisor = User::findOrFail($validated['advisor_id']);
+    $newAdvisorId = $validated['advisor_id'] ?? null;
+
+    if ($newAdvisorId) {
+        $advisor = User::findOrFail($newAdvisorId);
 
         if ($advisor->role !== 'club_advisor') {
             return response()->json([
@@ -265,21 +271,84 @@ public function assignAdvisor(Request $request, Club $club)
         }
     }
 
-    $club->update([
-        'advisor_id' => $validated['advisor_id'] ?? null,
-    ]);
+    DB::transaction(function () use ($club, $newAdvisorId, $request) {
+
+        $currentAdvisorId = $club->advisor_id;
+
+        // Do nothing if the assignment has not changed.
+        if ((int) $currentAdvisorId === (int) $newAdvisorId) {
+            return;
+        }
+
+        // Close the previous assignment.
+        if ($currentAdvisorId) {
+            ClubAdvisorHistory::where('club_id', $club->id)
+                ->where('advisor_id', $currentAdvisorId)
+                ->whereNull('ended_at')
+                ->update([
+                    'ended_at' => now(),
+                ]);
+        }
+
+        // Assign the new advisor and record the history.
+        $club->update([
+            'advisor_id' => $newAdvisorId,
+        ]);
+
+        if ($newAdvisorId) {
+            ClubAdvisorHistory::create([
+                'club_id' => $club->id,
+                'advisor_id' => $newAdvisorId,
+                'assigned_by' => $request->user()->id,
+                'assigned_at' => now(),
+                'ended_at' => null,
+            ]);
+        }
+    });
 
     $this->logActivity(
         'updated',
         'clubs',
-        'Assigned advisor to club: ' . $club->name
+        'Updated advisor assignment for club: ' . $club->name
     );
 
     return response()->json([
         'message' => 'Club advisor updated successfully.',
-        'data' => $club->load('advisor'),
+        'data' => $club->fresh()->load('advisor'),
     ]);
 }
+
+// Display instructor assignment history for a club
+public function advisorHistory(Request $request, Club $club)
+{
+    if ($request->user()->role !== 'admin') {
+        return response()->json([
+            'message' => 'Only administrators can view instructor assignment history.',
+        ], 403);
+    }
+
+    $history = $club->advisorHistories()
+        ->get()
+        ->map(function ($record) {
+            return [
+                'id' => $record->id,
+                'advisor_id' => $record->advisor_id,
+                'advisor_name' => $record->advisor?->name,
+                'advisor_email' => $record->advisor?->email,
+                'assigned_by' => $record->assignedBy?->name,
+                'assigned_at' => $record->assigned_at,
+                'ended_at' => $record->ended_at,
+                'status' => $record->ended_at ? 'Previous' : 'Current',
+            ];
+        });
+
+    return response()->json([
+        'club' => $club->name,
+        'history' => $history,
+    ]);
+}
+
+
     // Display clubs assigned to the logged-in advisor.
 public function myAssignedClubs(Request $request)
     {

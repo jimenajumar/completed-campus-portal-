@@ -63,6 +63,39 @@
 
 </div>
 
+<!-- Instructor Assignment History Modal -->
+<div id="advisorHistoryModal"
+     class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 max-h-[85vh] overflow-y-auto">
+
+        <div class="flex justify-between items-center mb-5">
+            <h2 id="historyClubName" class="text-xl font-bold text-blue-950">
+                Instructor Assignment History
+            </h2>
+
+            <button type="button"
+                    onclick="closeAdvisorHistory()"
+                    class="text-gray-500 hover:text-red-600 text-2xl">
+                &times;
+            </button>
+        </div>
+
+        <div id="advisorHistoryContent">
+            <p class="text-gray-500">Loading history...</p>
+        </div>
+
+        <div class="flex justify-end mt-6">
+            <button type="button"
+                    onclick="closeAdvisorHistory()"
+                    class="bg-blue-950 text-white px-5 py-2 rounded-lg">
+                Close
+            </button>
+        </div>
+
+    </div>
+</div>
+
 <script>
 const token = sessionStorage.getItem('campus_token');
 const clubList = document.getElementById('clubList');
@@ -211,7 +244,15 @@ assignButton.addEventListener('click', async () => {
     }
 });
 
-advisorSection.append(advisorSelect, assignButton);
+const historyButton = document.createElement('button');
+historyButton.textContent = 'Assignment History';
+historyButton.className = 'bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-800';
+
+historyButton.addEventListener('click', () => {
+    loadAdvisorHistory(club);
+});
+
+advisorSection.append(advisorSelect, assignButton, historyButton);
 
         const actions = document.createElement('div');
         actions.className = 'flex flex-wrap gap-2 mt-4';
@@ -349,6 +390,99 @@ document.getElementById('addClubForm').addEventListener('submit', async function
         showMessage(error.message);
     }
 });
+function formatHistoryDate(value) {
+    if (!value) return '—';
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+        ? value
+        : date.toLocaleString();
+}
+
+async function loadAdvisorHistory(club) {
+    const modal = document.getElementById('advisorHistoryModal');
+    const content = document.getElementById('advisorHistoryContent');
+    const title = document.getElementById('historyClubName');
+
+    title.textContent = `${club.name} - Instructor Assignment History`;
+
+    modal.classList.remove('hidden');
+
+    content.innerHTML = `
+        <p class="text-center text-gray-500 py-6">
+            Loading assignment history...
+        </p>
+    `;
+
+    try {
+        const result = await apiRequest(
+            `/api/clubs/${club.id}/advisor-history`
+        );
+
+        const history = result.history || [];
+
+        content.replaceChildren();
+
+        if (history.length === 0) {
+            content.innerHTML = `
+                <p class="text-center text-gray-500 py-6">
+                    No instructor assignment history found.
+                </p>
+            `;
+            return;
+        }
+
+        history.forEach(record => {
+            const card = document.createElement('div');
+            card.className = 'border rounded-lg p-4 mb-3';
+
+            const header = document.createElement('div');
+            header.className = 'flex flex-wrap justify-between gap-2';
+
+            const name = document.createElement('h3');
+            name.className = 'font-semibold text-[#102B59]';
+            name.textContent = record.advisor_name || 'Unknown instructor';
+
+            const badge = document.createElement('span');
+            badge.className = record.status === 'Current'
+                ? 'bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold'
+                : 'bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold';
+
+            badge.textContent = record.status;
+
+            header.append(name, badge);
+
+            const assigned = document.createElement('p');
+            assigned.className = 'text-sm text-gray-600 mt-3';
+            assigned.textContent =
+                `Assigned: ${formatHistoryDate(record.assigned_at)}`;
+
+            const assignedBy = document.createElement('p');
+            assignedBy.className = 'text-sm text-gray-600';
+            assignedBy.textContent =
+                `Assigned by: ${record.assigned_by || 'Unknown'}`;
+
+            const ended = document.createElement('p');
+            ended.className = 'text-sm text-gray-600';
+            ended.textContent = record.ended_at
+                ? `Assignment ended: ${formatHistoryDate(record.ended_at)}`
+                : 'Currently assigned';
+
+            card.append(header, assigned, assignedBy, ended);
+            content.appendChild(card);
+        });
+
+    } catch (error) {
+        content.textContent = error.message;
+    }
+}
+
+function closeAdvisorHistory() {
+    document.getElementById('advisorHistoryModal')
+        .classList.add('hidden');
+}
+
 loadAdvisors().then(() => loadClubs());
 </script>
 

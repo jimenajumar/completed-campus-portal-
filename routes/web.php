@@ -85,6 +85,19 @@ Route::get('/admin/activity-logs', function () {
 Route::get('/admin/memberships', function () {
     return view('admin.adminclubmembership');
 });
+Route::delete('/admin/users/{user}', [
+    \App\Http\Controllers\Admin\UserController::class,
+    'destroy'
+])->middleware('auth');
+
+Route::get('/admin/users/archive', [UserController::class, 'archive'])
+    ->name('admin.users.archive');
+
+Route::patch('/admin/users/{id}/restore', [UserController::class, 'restore'])
+    ->name('admin.users.restore');
+
+Route::delete('/admin/users/{id}/force-delete', [UserController::class, 'forceDelete'])
+    ->name('admin.users.forceDelete');
 
 });
 Route::post('/web-login', function (Request $request) {

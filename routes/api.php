@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\ActivityLogController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\PasswordController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -73,6 +74,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/club-advisors', [ClubController::class, 'advisors']);
         Route::patch('/clubs/{club}/assign-advisor', [ClubController::class, 'assignAdvisor']);
     });
+    Route::get('/clubs/{club}/advisor-history', [
+    ClubController::class,
+    'advisorHistory'
+    ]);
+    Route::post('/change-password', [
+    PasswordController::class,
+    'update'
+    ]);
 
     // Club Membership - view requests
     Route::get('/clubs/{club}/memberships', [

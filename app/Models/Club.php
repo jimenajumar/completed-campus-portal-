@@ -35,4 +35,12 @@ class Club extends Model
     {
     return $this->hasMany(Announcement::class);
     }
+    public function advisorHistories()
+{
+    return $this->hasMany(ClubAdvisorHistory::class, 'club_id')
+        ->with(['advisor', 'assignedBy'])
+        ->latest('assigned_at');
+}
+
+
 }
