@@ -28,8 +28,30 @@
         <input id="capacity" type="number" min="0" required
             placeholder="Capacity" class="border rounded-lg px-4 py-3">
 
-        <input id="roomType" required placeholder="Room Type"
-            class="border rounded-lg px-4 py-3">
+        <div>
+    <label for="room_type" class="block text-sm font-medium text-gray-700">
+        Room Type
+    </label>
+
+    <select
+        id="room_type"
+        name="room_type"
+        required
+        class="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-blue-500"
+    >
+        <option value="">Select Room Type</option>
+        <option value="Air Conditioning">Air Conditioning</option>
+        <option value="Classroom">Classroom</option>
+        <option value="Lecture Room">Lecture Room</option>
+        <option value="Computer Laboratory">Computer Laboratory</option>
+        <option value="Science Laboratory">Science Laboratory</option>
+        <option value="Conference Room">Conference Room</option>
+        <option value="Audio Visual Room">Audio Visual Room</option>
+        <option value="Library">Library</option>
+        <option value="Gymnasium">Gymnasium</option>
+        <option value="Multipurpose Hall">Multipurpose Hall</option>
+    </select>
+</div>
 
         <textarea id="description" placeholder="Description"
             class="border rounded-lg px-4 py-3 md:col-span-2"></textarea>
@@ -211,7 +233,7 @@ form.addEventListener('submit', async function(event) {
         room_name: document.getElementById('roomName').value,
         location: document.getElementById('location').value,
         capacity: Number(document.getElementById('capacity').value),
-        room_type: document.getElementById('roomType').value,
+        room_type: document.getElementById('room_type').value,
         description: document.getElementById('description').value
     };
 
@@ -240,7 +262,7 @@ function editRoom(room) {
     document.getElementById('roomName').value = room.room_name || '';
     document.getElementById('location').value = room.location || '';
     document.getElementById('capacity').value = room.capacity ?? 0;
-    document.getElementById('roomType').value = room.room_type || '';
+    document.getElementById('room_type').value = room.room_type || '';
     document.getElementById('description').value = room.description || '';
 
     document.getElementById('formTitle').textContent = 'Edit Room';

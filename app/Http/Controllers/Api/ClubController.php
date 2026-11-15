@@ -38,30 +38,41 @@ class ClubController extends Controller
     // Create a club
 public function store(Request $request)
 {
-    if ($request->user()->role !== 'club_advisor') {
+    if (!$request->user() || $request->user()->role !== 'admin') {
         return response()->json([
-            'message' => 'Only club advisors can submit club creation requests.'
+            'message' => 'Only administrators can create clubs.'
         ], 403);
     }
 
     $validated = $request->validate([
         'name' => 'required|string|max:255|unique:clubs,name',
         'description' => 'nullable|string',
+        'advisor_id' => 'nullable|exists:users,id',
     ]);
 
+    if (!empty($validated['advisor_id'])) {
+        $advisor = User::find($validated['advisor_id']);
+
+        if (!$advisor || $advisor->role !== 'club_advisor') {
+            return response()->json([
+                'message' => 'The selected user is not a club advisor.'
+            ], 422);
+        }
+    }
+
     $validated['created_by'] = $request->user()->id;
-    $validated['status'] = 'pending';
+    $validated['status'] = 'approved';
 
     $club = Club::create($validated);
 
     $this->logActivity(
         'created',
         'clubs',
-        'Submitted club creation request: ' . $club->name
+        'Created club: ' . $club->name
     );
 
     return response()->json([
-        'message' => 'Club creation request submitted successfully. Awaiting admin approval.',
+        'message' => 'Club created successfully.',
         'data' => $club,
     ], 201);
 }
@@ -269,4 +280,23 @@ public function assignAdvisor(Request $request, Club $club)
         'data' => $club->load('advisor'),
     ]);
 }
+    // Display clubs assigned to the logged-in advisor.
+public function myAssignedClubs(Request $request)
+    {
+    $user = $request->user();
+
+    if ($user->role !== 'club_advisor') {
+        return response()->json([
+            'message' => 'Only club advisors can access this list.',
+        ], 403);
+    }
+
+    $clubs = Club::where('advisor_id', $user->id)
+        ->where('status', 'approved')
+        ->orderBy('name')
+        ->get(['id', 'name', 'advisor_id']);
+
+    return response()->json($clubs);
+    }
+
 }

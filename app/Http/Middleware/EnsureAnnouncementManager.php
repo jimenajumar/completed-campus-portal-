@@ -10,7 +10,10 @@ class EnsureAnnouncementManager
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->role !== 'admin') {
+        if (
+            !$request->user() ||
+            !in_array($request->user()->role, ['admin', 'club_advisor'])
+        ) {
             return response()->json([
                 'message' => 'You are not authorized to manage announcements.',
             ], 403);

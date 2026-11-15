@@ -11,6 +11,7 @@ class Announcement extends Model
 
     protected $fillable = [
         'created_by',
+        'club_id',
         'title',
         'content',
         'category',
@@ -24,5 +25,9 @@ class Announcement extends Model
             'is_published' => 'boolean',
             'published_at' => 'datetime',
         ];
+    }
+    public function club()
+    {
+    return $this->belongsTo(Club::class);
     }
 }

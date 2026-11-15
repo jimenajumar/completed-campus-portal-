@@ -229,6 +229,20 @@ form.addEventListener('submit', async function(event) {
         is_published: document.getElementById('published').checked
     };
 
+    const confirmation = await Swal.fire({
+        title: id ? 'Update Announcement?' : 'Create Announcement?',
+        text: id
+            ? 'Are you sure you want to update this announcement?'
+            : 'Are you sure you want to save this announcement?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#991B1B',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: id ? 'Yes, Update' : 'Yes, Create'
+    });
+
+    if (!confirmation.isConfirmed) return;
+
     try {
         const result = await apiRequest(
             id ? `/api/announcements/${id}` : '/api/announcements',
@@ -238,12 +252,23 @@ form.addEventListener('submit', async function(event) {
             }
         );
 
-        showMessage(result.message, true);
         resetForm();
         await loadAnnouncements();
 
+        await Swal.fire({
+            title: 'Success!',
+            text: result.message,
+            icon: 'success',
+            confirmButtonColor: '#991B1B'
+        });
+
     } catch (error) {
-        showMessage(error.message);
+        await Swal.fire({
+            title: 'Error!',
+            text: error.message,
+            icon: 'error',
+            confirmButtonColor: '#991B1B'
+        });
     }
 });
 

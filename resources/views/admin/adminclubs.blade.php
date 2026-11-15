@@ -108,7 +108,7 @@ async function loadClubs() {
 
         console.log('Loaded clubs:', clubs);
         console.log('Club count:', clubs.length);
-        
+
         renderClubs();
     } catch (error) {
         showMessage(error.message);
@@ -165,7 +165,7 @@ function renderClubs() {
         const currentStatus = club.status || 'pending';
         statusBadge.className += ' ' + (colors[currentStatus] || 'bg-gray-100 text-gray-700');
         statusBadge.textContent = currentStatus;
-        
+
         const advisorSection = document.createElement('div');
 advisorSection.className = 'mt-4 flex flex-wrap gap-2';
 

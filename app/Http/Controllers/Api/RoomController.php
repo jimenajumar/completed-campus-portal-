@@ -5,9 +5,57 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class RoomController extends Controller
 {
+    // Standard room types and their accepted variations
+    private function normalizeRoomType(string $roomType): string
+    {
+        $key = preg_replace('/[^a-z]/', '', strtolower(trim($roomType)));
+
+        $roomTypes = [
+            'aircon' => 'Air Conditioning',
+            'airconditioning' => 'Air Conditioning',
+            'aiconditioning' => 'Air Conditioning',
+
+            'classroom' => 'Classroom',
+            'classroom' => 'Classroom',
+
+            'lectureroom' => 'Lecture Room',
+            'lecturehall' => 'Lecture Room',
+
+            'computerlab' => 'Computer Laboratory',
+            'computerlaboratory' => 'Computer Laboratory',
+
+            'sciencelab' => 'Science Laboratory',
+            'sciencelaboratory' => 'Science Laboratory',
+
+            'conferenceroom' => 'Conference Room',
+            'meetingroom' => 'Conference Room',
+
+            'audiovisualroom' => 'Audio Visual Room',
+            'avr' => 'Audio Visual Room',
+
+            'library' => 'Library',
+            'readingroom' => 'Library',
+
+            'gym' => 'Gymnasium',
+            'gymnasium' => 'Gymnasium',
+
+            'multipurposehall' => 'Multipurpose Hall',
+            'multipurposeroom' => 'Multipurpose Hall',
+        ];
+
+        if (!isset($roomTypes[$key])) {
+            throw ValidationException::withMessages([
+                'room_type' => ['Please select a valid room type.'],
+            ]);
+        }
+
+        return $roomTypes[$key];
+    }
+
     // GET: Display all rooms
     public function index()
     {
@@ -19,9 +67,15 @@ class RoomController extends Controller
         ], 200);
     }
 
-    // POST: Create a new room
+    // POST: Create a room
     public function store(Request $request)
     {
+        $request->merge([
+            'room_type' => $this->normalizeRoomType(
+                $request->input('room_type', '')
+            )
+        ]);
+
         $validated = $request->validate([
             'room_number' => 'required|string|max:255|unique:rooms,room_number',
             'room_name' => 'nullable|string|max:255',
@@ -34,10 +88,10 @@ class RoomController extends Controller
         $room = Room::create($validated);
 
         $this->logActivity(
-        'created',
-        'rooms',
-        'Created room: ' . $room->room_number
-    );
+            'created',
+            'rooms',
+            'Created room: ' . $room->room_number
+        );
 
         return response()->json([
             'message' => 'Room created successfully.',
@@ -54,9 +108,17 @@ class RoomController extends Controller
         ], 200);
     }
 
-    // PUT: Update a room
+    // PUT/PATCH: Update a room
     public function update(Request $request, Room $room)
     {
+        if ($request->has('room_type')) {
+            $request->merge([
+                'room_type' => $this->normalizeRoomType(
+                    $request->input('room_type')
+                )
+            ]);
+        }
+
         $validated = $request->validate([
             'room_number' => 'sometimes|required|string|max:255|unique:rooms,room_number,' . $room->id,
             'room_name' => 'nullable|string|max:255',
@@ -67,11 +129,12 @@ class RoomController extends Controller
         ]);
 
         $room->update($validated);
+
         $this->logActivity(
-        'updated',
-        'rooms',
-        'Updated room: ' . $room->room_number
-    );
+            'updated',
+            'rooms',
+            'Updated room: ' . $room->room_number
+        );
 
         return response()->json([
             'message' => 'Room updated successfully.',
@@ -80,22 +143,20 @@ class RoomController extends Controller
     }
 
     // DELETE: Remove a room
-    
-public function destroy(Room $room)
-{
-    $roomNumber = $room->room_number;
+    public function destroy(Room $room)
+    {
+        $roomNumber = $room->room_number;
 
-    $room->delete();
+        $room->delete();
 
-    $this->logActivity(
-        'deleted',
-        'rooms',
-        'Deleted room: ' . $roomNumber
-    );
+        $this->logActivity(
+            'deleted',
+            'rooms',
+            'Deleted room: ' . $roomNumber
+        );
 
-    return response()->json([
-        'message' => 'Room deleted successfully.'
-    ]);
-}
-
+        return response()->json([
+            'message' => 'Room deleted successfully.'
+        ], 200);
+    }
 }

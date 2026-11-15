@@ -53,6 +53,10 @@ Route::middleware('auth')->group(function () {
     abort_unless(Auth::user()->role === 'club_advisor', 403);
     return view('clubAdvisor.advisorclub');
     });
+    Route::get('/club-advisor/announcements', function () {
+    abort_unless(Auth::user()->role === 'club_advisor', 403);
+    return view('clubAdvisor.clubannouncement');
+});
 
 });
 Route::middleware(['auth', 'admin'])->group(function () {

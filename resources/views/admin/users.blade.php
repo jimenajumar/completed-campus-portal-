@@ -10,10 +10,17 @@
     </h2>
 
     @if(session('success'))
-        <div class="bg-green-100 text-green-800 p-3 rounded-lg mb-4">
-            {{ session('success') }}
-        </div>
-    @endif
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Swal.fire({
+        title: 'Success!',
+        text: @json(session('success')),
+        icon: 'success',
+        confirmButtonColor: '#991B1B'
+    });
+});
+</script>
+@endif
 
     @if($errors->any())
         <div class="bg-red-100 text-red-800 p-3 rounded-lg mb-4">
@@ -25,7 +32,7 @@
         </div>
     @endif
 
-    <form action="{{ url('/admin/users') }}" method="POST"
+    <form id="createUserForm" action="{{ url('/admin/users') }}" method="POST"
           class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @csrf
 
@@ -197,6 +204,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
     searchInput.addEventListener('input', filterUsers);
     roleFilter.addEventListener('change', filterUsers);
+
+    const createUserForm = document.getElementById('createUserForm');
+
+    createUserForm.addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const confirmation = await Swal.fire({
+        title: 'Create User Account?',
+        text: 'Are you sure you want to create this user?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#991B1B',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, Create User'
+    });
+
+    if (confirmation.isConfirmed) {
+        createUserForm.submit();
+    }
+});
 
 });
 </script>

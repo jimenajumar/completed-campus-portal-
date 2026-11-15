@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\RoomController;
 use App\Http\Controllers\Api\RoomAssignmentController;
 use App\Http\Controllers\Api\ActivityLogController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Api\HolidayController;
+use App\Http\Controllers\Api\QuoteController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -48,6 +50,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Clubs - viewing
     Route::get('/clubs', [ClubController::class, 'index']);
     Route::get('/clubs/{club}', [ClubController::class, 'show']);
+    Route::get('/my-assigned-clubs', [
+    ClubController::class,
+    'myAssignedClubs'
+]);
 
     // Clubs - management
     Route::middleware('club.manager')->group(function () {
@@ -98,15 +104,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
     return $request->user();
     });
-    // Rooms - Everyone authenticated can view
-    Route::get('/rooms', [RoomController::class, 'index']);
-    Route::get('/rooms/{room}', [RoomController::class, 'show']);
 
     // Rooms - Everyone authenticated can view
     Route::get('/rooms', [RoomController::class, 'index']);
     Route::get('/rooms/{room}', [RoomController::class, 'show']);
 
-    // Rooms - Only Admin and Staff can manage
+    // Rooms - Only Admin can manage
     Route::middleware('room.manager')->group(function () {
         Route::post('/rooms', [RoomController::class, 'store']);
         Route::put('/rooms/{room}', [RoomController::class, 'update']);
@@ -125,5 +128,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
     Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show']);
     });
+    // holiday api
+    Route::get('/holidays', [HolidayController::class, 'index']);
+    Route::get('/daily-quote', [QuoteController::class, 'index']);
 
 });
