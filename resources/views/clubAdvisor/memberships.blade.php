@@ -77,7 +77,7 @@ async function loadMemberships() {
         membershipList.innerHTML =
             '<p class="text-gray-500">Loading membership requests...</p>';
 
-        const clubs = await membershipApi('/api/clubs');
+        const clubs = await membershipApi('/api/my-assigned-clubs');
 
         const results = await Promise.all(
             clubs.map(async club => {

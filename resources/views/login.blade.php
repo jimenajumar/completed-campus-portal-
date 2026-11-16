@@ -215,7 +215,8 @@
                                    shadow-lg shadow-blue-950/15
                                    hover:-translate-y-0.5">
 
-                            Sign In to Your Account
+                            
+                                Log In to Your Account
 
                         </button>
 
@@ -258,7 +259,17 @@
 
     </div>
 
+<script>
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
 
+    togglePassword.addEventListener('click', function () {
+        const isPasswordHidden = passwordInput.type === 'password';
+
+        passwordInput.type = isPasswordHidden ? 'text' : 'password';
+        togglePassword.textContent = isPasswordHidden ? 'Hide' : 'Show';
+    });
+</script>
     <!-- log in -->
     <script>
 document.getElementById('loginForm')

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Club;
 use App\Models\ClubMembership;
 use Illuminate\Http\Request;
+use App\Models\AppSetting;
 
 class ClubMembershipController extends Controller
 {
@@ -42,16 +43,25 @@ class ClubMembershipController extends Controller
                 'message' => 'You can only join approved clubs.',
             ], 403);
         }
-        // Check the student's approved club memberships
-        $approvedClubs = ClubMembership::where('student_id', $request->user()->id)
-        ->where('status', 'approved')
-        ->count();
+        
+        // Get the maximum club limit configured by Admin
+    $maxClubs = (int) (AppSetting::where('key', 'max_clubs_per_student')
+        ->value('value') ?? 3);
 
-        if ($approvedClubs >= 3) {
-        return response()->json([
-        'message' => 'You can only join a maximum of three clubs.',
-        ], 422);
-        }
+    // Count the student's approved club memberships
+    $approvedClubs = ClubMembership::where(
+    'student_id',
+    $request->user()->id
+)
+    ->where('status', 'approved')
+    ->count();
+
+// Check the configured limit
+if ($approvedClubs >= $maxClubs) {
+    return response()->json([
+        'message' => "You can only join a maximum of {$maxClubs} clubs.",
+    ], 422);
+}
 
         $existing = ClubMembership::where('club_id', $club->id)
             ->where('student_id', $request->user()->id)
@@ -82,82 +92,63 @@ class ClubMembershipController extends Controller
 
     // Approve a membership request
     public function approve(Request $request, ClubMembership $membership)
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        if (
-            $user->role !== 'admin' &&
-            (int) $membership->club->advisor_id !== (int) $user->id
-        ) {
-            return response()->json([
-                'message' => 'You are not authorized to approve this request.',
-            ], 403);
-        }
+    // Check authorization
+    if (
+        $user->role !== 'admin' &&
+        (int) $membership->club->advisor_id !== (int) $user->id
+    ) {
+        return response()->json([
+            'message' => 'You are not authorized to approve this request.',
+        ], 403);
+    }
 
-        if ($membership->status !== 'pending') {
-            return response()->json([
-                'message' => 'Only pending requests can be approved.',
-            ], 422);
-        }
+    // Only pending requests can be approved
+    if ($membership->status !== 'pending') {
+        return response()->json([
+            'message' => 'Only pending requests can be approved.',
+        ], 422);
+    }
 
-       // Check the student's current approved memberships
-        $approvedClubs = ClubMembership::where('student_id', $membership->student_id)
+    // Get the maximum club limit configured by Admin
+    $maxClubs = (int) (AppSetting::where(
+        'key',
+        'max_clubs_per_student'
+    )->value('value') ?? 3);
+
+    // Count the student's approved memberships
+    $approvedClubs = ClubMembership::where(
+        'student_id',
+        $membership->student_id
+    )
         ->where('status', 'approved')
         ->count();
 
-        if ($approvedClubs >= 3) {
+    // Check the configured limit
+    if ($approvedClubs >= $maxClubs) {
         return response()->json([
-        'message' => 'This student has already reached the maximum of three clubs.',
+            'message' => "This student has already reached the maximum of {$maxClubs} clubs.",
         ], 422);
-        }
-
-$membership->update(['status' => 'approved']);;
-
-        $this->logActivity(
-            'approved',
-            'club_memberships',
-            'Approved membership for club: ' . $membership->club->name
-        );
-
-        return response()->json([
-            'message' => 'Membership approved successfully.',
-            'data' => $membership,
-        ]);
     }
 
-    // Reject a membership request
-    public function reject(Request $request, ClubMembership $membership)
-    {
-        $user = $request->user();
+    // Approve membership
+    $membership->update([
+        'status' => 'approved'
+    ]);
 
-        if (
-            $user->role !== 'admin' &&
-            (int) $membership->club->advisor_id !== (int) $user->id
-        ) {
-            return response()->json([
-                'message' => 'You are not authorized to reject this request.',
-            ], 403);
-        }
+    $this->logActivity(
+        'approved',
+        'club_memberships',
+        'Approved membership for club: ' . $membership->club->name
+    );
 
-        if ($membership->status !== 'pending') {
-            return response()->json([
-                'message' => 'Only pending requests can be rejected.',
-            ], 422);
-        }
-
-            $membership->update(['status' => 'rejected']);
-
-            $this->logActivity(
-                'rejected',
-                'club_memberships',
-                'Rejected membership for club: ' . $membership->club->name
-            );
-
-            return response()->json([
-                'message' => 'Membership rejected successfully.',
-                'data' => $membership,
-            ]);
-    }
+    return response()->json([
+        'message' => 'Membership approved successfully.',
+        'data' => $membership,
+    ]);
+}
     // Display the logged-in student's membership status
 public function myStatus(Request $request, Club $club)
 {

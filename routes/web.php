@@ -4,40 +4,69 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\SettingController;
 
 Route::get('/', function () {
+    return redirect('/login');
+});
+
+Route::get('/login', function () {
+    if (Auth::check()) {
+        $user = Auth::user();
+
+        return redirect(match ($user->role) {
+            'admin' => '/admin/dashboard',
+            'club_advisor' => '/club-advisor/dashboard',
+            default => '/dashboard',
+        });
+    }
+
     return view('login');
 });
-Route::get('/dashboard', function() {
-    return view('dashboard');
+
+// STUDENT AND SHARED PORTAL PAGES
+Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', function () {
+        abort_unless(Auth::user()->role === 'student', 403);
+
+        return view('dashboard');
+    });
+
+    Route::get('/schedule', function () {
+        return view('schedule');
+    });
+
+    Route::get('/events', function () {
+        return view('events');
+    });
+
+    Route::get('/announcements', function () {
+        return view('announcements');
+    });
+
+    Route::get('/weather', function () {
+        return view('weather');
+    });
+
+    Route::get('/profile', function () {
+        return view('profile');
+    });
+
+    Route::get('/clubs', function () {
+        return view('clubs');
+    });
+
+    Route::get('/rooms', function () {
+        return view('rooms');
+    });
+
+    Route::get('/room-assignments', function () {
+        return view('room-assignments');
+    });
+
 });
-Route::get('/schedule', function() {
-    return view('schedule');
-});
-Route::get('/events', function() {
-    return view('events');
-});
-Route::get('/announcements', function() {
-    return view('announcements');
-});
-Route::get('/weather', function() {
-    return view('weather');
-});
-Route::get('/profile', function() {
-    return view('profile');
-});
-Route::get('/login', function() {
-    return view('login');
-});
-Route::get('/clubs', function() {
-    return view('clubs');
-});
-Route::get('/rooms', function() {
-    return view('rooms');
-});
-Route::get('/room-assignments', function() {
-    return view('room-assignments');
-});
+
 Route::middleware('auth')->group(function () {
 
     Route::get('/club-advisor/dashboard', function () {
@@ -57,6 +86,13 @@ Route::middleware('auth')->group(function () {
     abort_unless(Auth::user()->role === 'club_advisor', 403);
     return view('clubAdvisor.clubannouncement');
 });
+Route::get('/club-advisor/clubs/{club}/members', function ($club) {
+    abort_unless(Auth::user()->role === 'club_advisor', 403);
+
+    return view('clubAdvisor.members', [
+        'clubId' => $club
+    ]);
+})->name('club-advisor.members');
 
 });
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -67,6 +103,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/events', function () {
     return view('admin.adminevents');
 });
+// Admin Settings
+Route::get('/admin/settings', [SettingController::class, 'index'])
+    ->name('admin.settings');
+
+Route::put('/admin/settings', [SettingController::class, 'update'])
+    ->name('admin.settings.update');
 Route::get('/admin/announcements', function () {
     return view('admin.adminannouncements');
 });
@@ -85,6 +127,7 @@ Route::get('/admin/activity-logs', function () {
 Route::get('/admin/memberships', function () {
     return view('admin.adminclubmembership');
 });
+
 Route::delete('/admin/users/{user}', [
     \App\Http\Controllers\Admin\UserController::class,
     'destroy'
@@ -100,6 +143,7 @@ Route::delete('/admin/users/{id}/force-delete', [UserController::class, 'forceDe
     ->name('admin.users.forceDelete');
 
 });
+
 Route::post('/web-login', function (Request $request) {
     $credentials = $request->validate([
         'email' => 'required|email',
@@ -142,5 +186,5 @@ Route::post('/web-logout', function (Request $request) {
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect('/');
+    return redirect('/login');
 })->middleware('auth');

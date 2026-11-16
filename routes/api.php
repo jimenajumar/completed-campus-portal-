@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PasswordController;
+use App\Http\Controllers\Api\WeatherController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -137,8 +138,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
     Route::get('/activity-logs/{activityLog}', [ActivityLogController::class, 'show']);
     });
-    // holiday api
+    //  api
     Route::get('/holidays', [HolidayController::class, 'index']);
     Route::get('/daily-quote', [QuoteController::class, 'index']);
+    Route::get('/weather', [WeatherController::class, 'index']);
 
 });

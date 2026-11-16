@@ -7,7 +7,7 @@
 <div class="min-h-screen bg-gray-50">
 
     <!-- Welcome Banner -->
-    <section class="bg-red-900 text-white px-6 py-12">
+    <section class="bg-[#102B59] text-white px-6 py-12">
         <div class="max-w-7xl mx-auto">
             <p class="text-red-200 text-sm font-semibold uppercase tracking-wider">
                 ACES Tagum College Inc.

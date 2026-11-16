@@ -36,7 +36,7 @@ const message = document.getElementById('clubMessage');
 
 async function loadClubs() {
     try {
-        const response = await fetch('/api/clubs', {
+        const response = await fetch('/api/my-assigned-clubs', {
             headers: {
                 'Accept': 'application/json',
                 'Authorization': `Bearer ${token}`
@@ -80,8 +80,19 @@ async function loadClubs() {
                 editClub(club);
             });
 
-            card.append(name, description, status, editButton);
-            clubList.appendChild(card);
+            const membersButton = document.createElement('button');
+
+membersButton.className =
+    'mt-4 ml-2 bg-[#102B59] hover:bg-[#173F91] text-white px-4 py-2 rounded-lg transition';
+
+membersButton.textContent = 'View Members';
+
+membersButton.addEventListener('click', () => {
+    window.location.href = `/club-advisor/clubs/${club.id}/members`;
+});
+
+card.append(name, description, status, editButton, membersButton);
+clubList.appendChild(card);
         });
 
     } catch (error) {

@@ -142,6 +142,18 @@
                     <span>▣</span>
                     Room Assignments
                 </a>
+                <a href="{{ url('/admin/activity-logs') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg
+                    transition {{ request()->is('admin/activity-logs') ? 'bg-[#D6B45B] text-[#102B59] font-semibold' : 'text-white hover:bg-[#173F91]' }}">
+                        Activity Logs
+                </a>
+
+                <a href="{{ route('admin.settings') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition {{ request()->routeIs('admin.settings*') ? 'bg-[#D6B45B] text-[#102B59]' : 'text-white hover:bg-[#173F91]' }}">
+                    Settings
+
+                </a>
+
 
             </nav>
 

@@ -362,23 +362,30 @@ async function loadCampusAnnouncements() {
 // FETCH WEATHER FROM OPEN-METEO
 // ========================================
 
+
 async function loadCampusWeather() {
     const container = document.getElementById('campusWeather');
 
     try {
-        const url = 'https://api.open-meteo.com/v1/forecast' +
-            '?latitude=7.4478&longitude=125.8078' +
-            '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m' +
-            '&timezone=Asia%2FManila';
-
-        const response = await fetch(url);
+        const response = await fetch('/api/weather', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem('campus_token')}`
+            }
+        });
 
         if (!response.ok) {
             throw new Error('Weather request failed.');
         }
 
-        const data = await response.json();
-        const weather = data.current;
+        const result = await response.json();
+
+        if (!result.success || !result.data?.current) {
+            throw new Error('Weather data is unavailable.');
+        }
+
+        const weather = result.data.current;
 
         const weatherDescriptions = {
             0: 'Clear sky',
@@ -400,7 +407,8 @@ async function loadCampusWeather() {
         };
 
         const description =
-            weatherDescriptions[weather.weather_code] || 'Weather conditions updated';
+            weatherDescriptions[weather.weather_code] ||
+            'Weather conditions updated';
 
         container.innerHTML = `
             <h3 class="text-4xl font-bold">
@@ -435,10 +443,9 @@ async function loadCampusWeather() {
     }
 }
 
-
-// load CAMPUS DATA
-
+// Load campus weather
 loadCampusWeather();
+
 loadCampusAnnouncements();
 loadCampusEvents();
 
