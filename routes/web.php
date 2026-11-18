@@ -130,6 +130,9 @@ Route::get('/admin/activity-logs', function () {
 Route::get('/admin/memberships', function () {
     return view('admin.adminclubmembership');
 });
+Route::get('/admin/room-reservations', function () {
+    return view('admin.room-reservations');
+})->name('admin.room-reservations');
 
 Route::delete('/admin/users/{user}', [
     \App\Http\Controllers\Admin\UserController::class,

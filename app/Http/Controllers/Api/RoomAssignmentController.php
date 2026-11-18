@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\RoomAssignment;
 use Illuminate\Http\Request;
+use App\Models\RoomReservation;
 
 class RoomAssignmentController extends Controller
 {
@@ -45,7 +46,13 @@ class RoomAssignmentController extends Controller
             ->where('ends_at', '>', $validated['starts_at'])
             ->exists();
 
-        if ($overlap) {
+        $reservationOverlap = RoomReservation::where('room_id', $validated['room_id'])
+    ->where('status', 'approved')
+    ->where('starts_at', '<', $validated['ends_at'])
+    ->where('ends_at', '>', $validated['starts_at'])
+    ->exists();
+
+if ($overlap || $reservationOverlap) {
             return response()->json([
                 'message' => 'This room is already booked during the selected time.'
             ], 409);
@@ -101,7 +108,13 @@ class RoomAssignmentController extends Controller
             ->where('ends_at', '>', $validated['starts_at'])
             ->exists();
 
-        if ($overlap) {
+        $reservationOverlap = RoomReservation::where('room_id', $validated['room_id'])
+    ->where('status', 'approved')
+    ->where('starts_at', '<', $validated['ends_at'])
+    ->where('ends_at', '>', $validated['starts_at'])
+    ->exists();
+
+if ($overlap || $reservationOverlap) {
             return response()->json([
                 'message' => 'This room is already booked during the selected time.'
             ], 409);

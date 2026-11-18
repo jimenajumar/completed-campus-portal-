@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\HolidayController;
 use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\WeatherController;
+use App\Http\Controllers\Api\RoomReservationController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -146,5 +147,38 @@ Route::patch('/clubs/{id}/restore', [ClubController::class, 'restore']);
     Route::get('/holidays', [HolidayController::class, 'index']);
     Route::get('/daily-quote', [QuoteController::class, 'index']);
     Route::get('/weather', [WeatherController::class, 'index']);
+
+    // Club room reservations
+
+// Club Advisor - submit and view reservation requests
+Route::post('/room-reservations', [
+    RoomReservationController::class,
+    'store'
+]);
+
+Route::get('/my-room-reservations', [
+    RoomReservationController::class,
+    'myReservations'
+]);
+
+// Admin - review reservation requests
+Route::middleware('admin')->group(function () {
+
+    Route::get('/room-reservations', [
+        RoomReservationController::class,
+        'index'
+    ]);
+
+    Route::patch('/room-reservations/{reservation}/approve', [
+        RoomReservationController::class,
+        'approve'
+    ]);
+
+    Route::patch('/room-reservations/{reservation}/reject', [
+        RoomReservationController::class,
+        'reject'
+    ]);
+
+});
 
 });

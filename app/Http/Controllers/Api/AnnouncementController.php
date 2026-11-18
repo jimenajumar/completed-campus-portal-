@@ -15,19 +15,27 @@ class AnnouncementController extends Controller
     {
         $user = $request->user();
 
-        $query = Announcement::with('club')->latest();
+        $query = Announcement::with([
+            'club',
+            'roomReservation.room'
+        ])->latest();
 
         if ($user->role === 'admin') {
+
             // Admin can see all announcements.
+
         } elseif ($user->role === 'club_advisor') {
+
             // Advisor can see announcements belonging to assigned clubs.
             $query->whereIn(
                 'club_id',
                 Club::where('advisor_id', $user->id)->select('id')
             );
+
         } elseif ($user->role === 'student') {
-            // Students can see general published announcements
-            // and published announcements from approved clubs.
+
+            // Students can only see published announcements
+            // from general announcements or approved clubs.
             $query->where('is_published', true)
                 ->where(function ($q) use ($user) {
                     $q->whereNull('club_id')
@@ -38,6 +46,7 @@ class AnnouncementController extends Controller
                                 ->select('club_id')
                         );
                 });
+
         } else {
             return response()->json([
                 'message' => 'Unauthorized.'
@@ -47,7 +56,7 @@ class AnnouncementController extends Controller
         return response()->json($query->get());
     }
 
-    // Create an announcement.
+    // Create an announcement without a room.
     public function store(Request $request)
     {
         $user = $request->user();
@@ -66,11 +75,9 @@ class AnnouncementController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'category' => 'nullable|string|max:255',
-            'is_published' => 'sometimes|boolean',
-            'published_at' => 'nullable|date',
         ]);
 
-        // Advisors can only publish for clubs assigned to them.
+        // Advisors can only create announcements for assigned clubs.
         if (
             $user->role === 'club_advisor' &&
             !Club::where('id', $validated['club_id'])
@@ -82,19 +89,29 @@ class AnnouncementController extends Controller
             ], 403);
         }
 
-        $validated['created_by'] = $user->id;
-
-        $announcement = Announcement::create($validated);
+        // No-room announcements are published immediately.
+        $announcement = Announcement::create([
+            'created_by' => $user->id,
+            'club_id' => $validated['club_id'] ?? null,
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'category' => $validated['category'] ?? 'general',
+            'is_published' => true,
+            'published_at' => now(),
+        ]);
 
         $this->logActivity(
             'created',
             'announcements',
-            'Created announcement: ' . $announcement->title
+            'Published announcement: ' . $announcement->title
         );
 
         return response()->json([
-            'message' => 'Announcement created successfully.',
-            'data' => $announcement->load('club'),
+            'message' => 'Announcement published successfully.',
+            'data' => $announcement->load([
+                'club',
+                'roomReservation.room'
+            ]),
         ], 201);
     }
 
@@ -104,15 +121,20 @@ class AnnouncementController extends Controller
         $user = $request->user();
 
         if ($user->role === 'admin') {
-            return response()->json($announcement->load('club'));
-        }
 
-        if ($user->role === 'club_advisor') {
+            return response()->json(
+                $announcement->load(['club', 'roomReservation.room'])
+            );
+
+        } elseif ($user->role === 'club_advisor') {
+
             $authorized = $announcement->club_id !== null &&
                 Club::where('id', $announcement->club_id)
                     ->where('advisor_id', $user->id)
                     ->exists();
+
         } elseif ($user->role === 'student') {
+
             $authorized = $announcement->is_published &&
                 (
                     $announcement->club_id === null ||
@@ -121,6 +143,7 @@ class AnnouncementController extends Controller
                         ->where('status', 'approved')
                         ->exists()
                 );
+
         } else {
             $authorized = false;
         }
@@ -131,7 +154,9 @@ class AnnouncementController extends Controller
             ], 404);
         }
 
-        return response()->json($announcement->load('club'));
+        return response()->json(
+            $announcement->load(['club', 'roomReservation.room'])
+        );
     }
 
     // Update an announcement.
@@ -153,8 +178,14 @@ class AnnouncementController extends Controller
             'title' => 'sometimes|required|string|max:255',
             'content' => 'sometimes|required|string',
             'category' => 'sometimes|nullable|string|max:255',
-            'is_published' => 'sometimes|boolean',
-            'published_at' => 'sometimes|nullable|date',
+
+            'is_published' => $user->role === 'admin'
+                ? 'sometimes|boolean'
+                : 'prohibited',
+
+            'published_at' => $user->role === 'admin'
+                ? 'sometimes|nullable|date'
+                : 'prohibited',
         ]);
 
         if (
@@ -169,6 +200,19 @@ class AnnouncementController extends Controller
             ], 403);
         }
 
+        // A room-request announcement cannot be manually published
+        // while its reservation is pending or rejected.
+        if (
+            isset($validated['is_published']) &&
+            $validated['is_published'] === true &&
+            $announcement->roomReservation()->exists() &&
+            $announcement->roomReservation()->where('status', '!=', 'approved')->exists()
+        ) {
+            return response()->json([
+                'message' => 'This announcement can only be published after its room reservation is approved.'
+            ], 422);
+        }
+
         $announcement->update($validated);
 
         $this->logActivity(
@@ -179,7 +223,10 @@ class AnnouncementController extends Controller
 
         return response()->json([
             'message' => 'Announcement updated successfully.',
-            'data' => $announcement->fresh()->load('club'),
+            'data' => $announcement->fresh()->load([
+                'club',
+                'roomReservation.room'
+            ]),
         ]);
     }
 

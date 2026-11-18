@@ -155,6 +155,18 @@
                 </a>
 
 
+        <!-- Room Reservations -->
+    <a href="{{ url('/admin/room-reservations') }}"
+   class="flex items-center gap-3 px-4 py-3 rounded-lg
+   font-semibold transition
+   {{ request()->is('admin/room-reservations*') ? 'bg-[#D6B45B] text-[#102B59]' : 'text-white hover:bg-[#173F91]' }}">
+
+    <span>▤</span>
+    Room Reservations
+</a>
+
+
+
             </nav>
 
 

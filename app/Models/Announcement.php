@@ -30,4 +30,12 @@ class Announcement extends Model
     {
     return $this->belongsTo(Club::class);
     }
+    public function roomReservation()
+{
+    return $this->hasOne(RoomReservation::class);
+}
+public function getRoomDetailsAttribute()
+{
+    return $this->roomReservation?->load('room');
+}
 }
