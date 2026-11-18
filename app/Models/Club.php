@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Club extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -31,16 +32,16 @@ class Club extends Model
     {
         return $this->hasMany(ClubMembership::class);
     }
+
     public function announcements()
     {
-    return $this->hasMany(Announcement::class);
+        return $this->hasMany(Announcement::class);
     }
+
     public function advisorHistories()
-{
-    return $this->hasMany(ClubAdvisorHistory::class, 'club_id')
-        ->with(['advisor', 'assignedBy'])
-        ->latest('assigned_at');
-}
-
-
+    {
+        return $this->hasMany(ClubAdvisorHistory::class, 'club_id')
+            ->with(['advisor', 'assignedBy'])
+            ->latest('assigned_at');
+    }
 }

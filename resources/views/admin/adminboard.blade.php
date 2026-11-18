@@ -85,7 +85,7 @@
                 <h3 class="font-bold text-lg text-blue-950">Room Assignments</h3>
                 <p class="text-gray-500 text-sm mt-2">View classroom assignments.</p>
             </a>
-            <a href="{{ url('/admin/activity-logs') }}" class="px-4 py-3 hover:text-red-700">Activity Logs</a>
+            
 
         </div>
     </div>

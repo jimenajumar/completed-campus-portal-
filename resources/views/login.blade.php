@@ -68,7 +68,7 @@
                     <p class="text-blue-100 text-base lg:text-lg
                               leading-relaxed max-w-md">
                         Stay connected with your campus.
-                        Access announcements, events, schedules,
+                        Access announcements, events,
                         clubs, and important student information
                         in one place.
                     </p>

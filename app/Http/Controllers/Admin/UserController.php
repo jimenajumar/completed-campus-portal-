@@ -54,7 +54,12 @@ class UserController extends Controller
                 'required',
                 Rule::in(['admin', 'club_advisor', 'student']),
             ],
-            'student_id' => 'nullable|string|unique:users,student_id',
+            'student_id' => [
+                'required_if:role,student',
+                'nullable',
+                'string',
+                'unique:users,student_id',
+],
         ]);
 
         User::create($validated);

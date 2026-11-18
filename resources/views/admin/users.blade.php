@@ -99,19 +99,40 @@
                 minlength="8"
                 class="border rounded-lg p-3">
 
-            <select name="role" required class="border rounded-lg p-3">
-                <option value="">Select User Role</option>
-                <option value="admin">Admin</option>
-                <option value="club_advisor">Club Advisor</option>
-                <option value="student">Student</option>
-            </select>
+            <div>
+    <select
+        name="role"
+        id="userRole"
+        required
+        class="border rounded-lg p-3 w-full"
+    >
+        <option value="">Select User Role</option>
+        <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>
+            Admin
+        </option>
+        <option value="club_advisor" {{ old('role') === 'club_advisor' ? 'selected' : '' }}>
+            Club Advisor
+        </option>
+        <option value="student" {{ old('role') === 'student' ? 'selected' : '' }}>
+            Student
+        </option>
+    </select>
+</div>
 
-            <input
-                type="text"
-                name="student_id"
-                placeholder="Student ID (optional)"
-                value="{{ old('student_id') }}"
-                class="border rounded-lg p-3">
+<div>
+    <input
+        type="text"
+        name="student_id"
+        id="studentId"
+        placeholder="Student ID (optional)"
+        value="{{ old('student_id') }}"
+        class="border rounded-lg p-3 w-full"
+    >
+
+    <p id="studentIdHint" class="text-xs text-gray-500 mt-1">
+        Student ID is optional for Admin and Club Advisor.
+    </p>
+</div>
 
             <button
                 type="submit"
@@ -258,6 +279,29 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    
+ // DYNAMIC STUDENT ID REQUIREMENT
+const userRole = document.getElementById('userRole');
+const studentId = document.getElementById('studentId');
+const studentIdHint = document.getElementById('studentIdHint');
+
+function updateStudentIdRequirement() {
+    const isStudent = userRole.value === 'student';
+
+    studentId.required = isStudent;
+    studentId.placeholder = isStudent
+        ? 'Student ID (required)'
+        : 'Student ID (optional)';
+
+    studentIdHint.textContent = isStudent
+        ? 'Student ID is required for student accounts.'
+        : 'Student ID is optional for Admin and Club Advisor.';
+}
+
+userRole.addEventListener('change', updateStudentIdRequirement);
+
+// Apply the correct requirement when the page loads
+updateStudentIdRequirement();   
 
     // SEARCH AND ROLE FILTER
     const searchInput = document.getElementById('userSearch');

@@ -5,9 +5,84 @@
 
 @section('content')
 
-<div class="mb-6">
-    <h2 class="text-2xl font-bold text-blue-950">Events Management</h2>
-    <p class="text-gray-500">View and manage submitted campus events.</p>
+<div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+        <h2 class="text-2xl font-bold text-blue-950">Events Management</h2>
+        <p class="text-gray-500">Create and manage campus events.</p>
+    </div>
+
+    <button
+        type="button"
+        id="openCreateEvent"
+        class="bg-[#102B59] hover:bg-[#173F91] text-white px-5 py-3 rounded-lg font-semibold transition">
+        + Create Event
+    </button>
+</div>
+
+<!-- CREATE EVENT MODAL -->
+<div id="createEventModal"
+     class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-xl p-6">
+
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-xl font-bold text-[#102B59]">Create Campus Event</h3>
+
+            <button type="button" id="closeCreateEvent"
+                    class="text-gray-500 hover:text-red-600 text-2xl">
+                &times;
+            </button>
+        </div>
+
+        <form id="createEventForm" class="space-y-4">
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">Event Title</label>
+                <input type="text" name="title" required
+                       class="w-full border rounded-lg px-4 py-2"
+                       placeholder="Enter event title">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">Description</label>
+                <textarea name="description" rows="3"
+                          class="w-full border rounded-lg px-4 py-2"
+                          placeholder="Enter event description"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">Venue</label>
+                <input type="text" name="venue" required
+                       class="w-full border rounded-lg px-4 py-2"
+                       placeholder="Enter event venue">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">Start Date and Time</label>
+                <input type="datetime-local" name="starts_at" required
+                       class="w-full border rounded-lg px-4 py-2">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold mb-1">End Date and Time</label>
+                <input type="datetime-local" name="ends_at" required
+                       class="w-full border rounded-lg px-4 py-2">
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3">
+                <button type="button" id="cancelCreateEvent"
+                        class="px-4 py-2 border rounded-lg">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="bg-[#102B59] hover:bg-[#173F91] text-white px-5 py-2 rounded-lg">
+                    Save Event
+                </button>
+            </div>
+
+        </form>
+    </div>
 </div>
 
 <div class="bg-white rounded-xl shadow p-6">
@@ -230,7 +305,102 @@ document.getElementById('searchEvent')
 document.getElementById('statusFilter')
     .addEventListener('change', renderEvents);
 
+
+// CREATE EVENT MODAL
+const createEventModal = document.getElementById('createEventModal');
+const createEventForm = document.getElementById('createEventForm');
+
+document.getElementById('openCreateEvent').addEventListener('click', () => {
+    createEventModal.classList.remove('hidden');
+    createEventModal.classList.add('flex');
+});
+
+function closeCreateEventModal() {
+    createEventModal.classList.add('hidden');
+    createEventModal.classList.remove('flex');
+}
+
+document.getElementById('closeCreateEvent').addEventListener('click', closeCreateEventModal);
+document.getElementById('cancelCreateEvent').addEventListener('click', closeCreateEventModal);
+
+// SAVE EVENT WITH SWEETALERT2
+createEventForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const form = this;
+    const formData = new FormData(form);
+
+    const eventData = Object.fromEntries(formData.entries());
+
+    if (new Date(eventData.ends_at) <= new Date(eventData.starts_at)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Invalid Date',
+            text: 'The end date must be later than the start date.'
+        });
+        return;
+    }
+
+    const confirmation = await Swal.fire({
+        title: 'Create Event?',
+        text: 'Are you sure you want to save this campus event?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#102B59',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Yes, create event',
+        cancelButtonText: 'Cancel'
+    });
+
+    if (!confirmation.isConfirmed) return;
+
+    try {
+        const response = await fetch('/api/events', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(eventData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            let errorMessage = result.message || 'Unable to create event.';
+
+            if (result.errors) {
+                errorMessage = Object.values(result.errors).flat().join('\n');
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        closeCreateEventModal();
+        form.reset();
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Event Created!',
+            text: result.message || 'Your event was created successfully.',
+            confirmButtonColor: '#102B59'
+        });
+
+        await loadEvents();
+
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Creation Failed',
+            text: error.message,
+            confirmButtonColor: '#102B59'
+        });
+    }
+});
+
 loadEvents();
+
 </script>
 
 @endsection

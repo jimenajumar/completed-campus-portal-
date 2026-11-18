@@ -139,20 +139,13 @@ public function update(Request $request, Club $club)
         'data' => $club,
     ]);
 }
-    // Delete a club
+// Archive a club (Admin only)
+// Archive a club (Admin only)
 public function destroy(Request $request, Club $club)
 {
-    $user = $request->user();
-
-    if (
-        $user->role !== 'admin' &&
-        !(
-            $user->role === 'club_advisor' &&
-            (int) $club->advisor_id === (int) $user->id
-        )
-    ) {
+    if ($request->user()->role !== 'admin') {
         return response()->json([
-            'message' => 'You are not authorized to delete this club.',
+            'message' => 'Only administrators can archive clubs.',
         ], 403);
     }
 
@@ -161,13 +154,13 @@ public function destroy(Request $request, Club $club)
     $club->delete();
 
     $this->logActivity(
-        'deleted',
+        'archived',
         'clubs',
-        'Deleted club: ' . $clubName
+        'Archived club: ' . $clubName
     );
 
     return response()->json([
-        'message' => 'Club deleted successfully.',
+        'message' => 'Club archived successfully.',
     ]);
 }
 
@@ -367,5 +360,61 @@ public function myAssignedClubs(Request $request)
 
     return response()->json($clubs);
     }
+    // Display archived clubs (Admin only)
+public function archived(Request $request)
+{
+    if ($request->user()->role !== 'admin') {
+        return response()->json([
+            'message' => 'Only administrators can view archived clubs.',
+        ], 403);
+    }
 
+    $clubs = Club::onlyTrashed()
+        ->with('advisor')
+        ->latest('deleted_at')
+        ->get();
+
+    return response()->json($clubs);
+}
+
+// Restore an archived club (Admin only)
+public function restore(Request $request, $id)
+{
+    if ($request->user()->role !== 'admin') {
+        return response()->json([
+            'message' => 'Only administrators can restore clubs.',
+        ], 403);
+    }
+
+    $club = Club::onlyTrashed()->findOrFail($id);
+
+    $club->restore();
+
+    $this->logActivity(
+        'restored',
+        'clubs',
+        'Restored club: ' . $club->name
+    );
+
+    return response()->json([
+        'message' => 'Club restored successfully.',
+        'data' => $club->fresh()->load('advisor'),
+    ]);
+}
+// Display archived clubs (Admin only)
+public function archive(Request $request)
+{
+    if ($request->user()->role !== 'admin') {
+        return response()->json([
+            'message' => 'Only administrators can view archived clubs.',
+        ], 403);
+    }
+
+    $clubs = Club::onlyTrashed()
+        ->with('advisor')
+        ->latest('deleted_at')
+        ->get();
+
+    return response()->json($clubs);
+}
 }

@@ -61,7 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('club.manager')->group(function () {
         Route::post('/clubs', [ClubController::class, 'store']);
         Route::put('/clubs/{club}', [ClubController::class, 'update']);
-        Route::delete('/clubs/{club}', [ClubController::class, 'destroy']);
+        
     });
 
     // Admin-only club approval
@@ -74,6 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('admin')->group(function () {
         Route::get('/club-advisors', [ClubController::class, 'advisors']);
         Route::patch('/clubs/{club}/assign-advisor', [ClubController::class, 'assignAdvisor']);
+        // Admin-only club archive management
+Route::get('/clubs-archive', [ClubController::class, 'archive']);
+Route::delete('/clubs/{club}/archive', [ClubController::class, 'destroy']);
+Route::patch('/clubs/{id}/restore', [ClubController::class, 'restore']);
     });
     Route::get('/clubs/{club}/advisor-history', [
     ClubController::class,

@@ -115,6 +115,9 @@ Route::get('/admin/announcements', function () {
 Route::get('/admin/clubs', function () {
     return view('admin.adminclubs');
 });
+Route::get('/admin/clubs/archive', function () {
+    return view('admin.club-archive');
+})->name('admin.clubs.archive');
 Route::get('/admin/rooms', function () {
     return view('admin.adminrooms');
 });
